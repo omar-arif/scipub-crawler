@@ -1,14 +1,26 @@
+from weakref import proxy
 from abstract_scraper import KeywordWebCrawler
 from pandas import to_datetime
 
 class ArXivCrawler(KeywordWebCrawler):
 
-    def __init__(self, query):
+    def __init__(self, query, **kwargs):
         self.query = query
         self.page_var = 0
         url = f"https://arxiv.org/search/?query={self.query}&searchtype=all&size=200&start={self.page_var}"
         dict_structure = {"Author(s)":[], "Title":[], "Abstract":[], "Field(s)":[], "Date":[]}
-        super().__init__(url, dict_structure)
+
+        try:
+            if len(kwargs) == 1:
+                super().__init__(url, dict_structure, query_csv=kwargs['query_csv'])
+            elif len(kwargs) == 2:
+                super().__init__(url, dict_structure, query_csv=kwargs['query_csv'], author_csv=kwargs['author_csv'])
+            elif len(kwargs) == 3:
+                super().__init__(url, dict_structure, query_csv=kwargs['query_csv'], author_csv=kwargs['author_csv'], proxy_csv=kwargs['proxy_csv'])
+            else:
+                super().__init__(url, dict_structure)
+        except KeyError:
+            print("one or more kwargs are not named correctly, should be 'query_csv', 'author_csv' and 'proxy_csv'")
     
     def set_next_page_url(self):
         self.page_var += 200
@@ -26,7 +38,9 @@ class ArXivCrawler(KeywordWebCrawler):
     def loop_through_pages(self):
         output_dict = self.empty_dict
 
+    # loop through slef.query_df and self.author_df
         while True:
+            # switch_proxy every now and then (at time 0 included)
 
             self.get_response()
             if self.request_response.status_code != 200:

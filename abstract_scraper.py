@@ -1,34 +1,61 @@
 from abc import ABC, abstractmethod
+from weakref import proxy
 from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 from numpy import nan
+from random import randint
 
 class KeywordWebCrawler(ABC):
     '''
         Abstract class representing a crawler/scraper of a website
     '''
 
-    def __init__(self, query_url, dict_structure):
+    def __init__(self, query_url, dict_structure, **kwargs):
         # initialize query url (url of the first page of the search query)
         self.query_url = query_url
         self.empty_dict = dict_structure
         self.request_response = None
+        self.current_proxy = None
         # add proxy attribute (of type "{'http':'ip:port}")
-        # add user-agent attribute (https://rayobyte.com/blog/most-common-user-agents/#:~:text=How%20to%20rotate%20user%20agents%3F%C2%A0)
+        try:
+            self.query_df = pd.open_csv(kwargs['query_csv'])
+        except:
+            self.query_df = None
+        
+        try:
+            self.author_df = pd.open_csv(kwargs['author_csv'])
+        except:
+            self.author_df = None
+
+        try:
+            self.proxy_df = pd.open_csv(kwargs['proxy_csv'])
+        except:
+            self.proxy_df = None
         # do a multi args constructor see : https://www.geeksforgeeks.org/what-is-a-clean-pythonic-way-to-have-multiple-constructors-in-python/
         # add exception handling (cases of empty result list for example)
     
     @abstractmethod
     def set_next_page_url(self):
         pass
+
+    def format_proxy(proxy):
+        return {'http': proxy}
+
+    def switch_proxy(self):
+        if self.proxy_df != None:
+            self.current_proxy = self.format_proxy(self.proxy_df.iloc[randint(0,self.proxy_df.shape[0])])
     
     def get_response(self):
         '''
             Get the response to a GET request for a given URL (which represents the URL of a search query in the website's search engine)
         '''
-        headers = {'User-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.19582'}
-        self.request_response = requests.get(self.query_url, headers=headers)
+        if self.current_proxy == None:
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:53.0) Gecko/20100101 Firefox/53.0'}
+            self.request_response = requests.get(self.query_url, headers=headers)
+        else:
+            self.request_response = requests.get(self.query_url, proxies=self.current_proxy)
+
     
     def get_search_results(self, tag, class_):
         '''
