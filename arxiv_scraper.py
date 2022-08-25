@@ -1,30 +1,40 @@
-from weakref import proxy
 from abstract_scraper import KeywordWebCrawler
 from pandas import to_datetime
 
 class ArXivCrawler(KeywordWebCrawler):
 
-    def __init__(self, query, **kwargs):
-        self.query = query
+    def __init__(self, **kwargs):
+        
         self.page_var = 0
-        url = f"https://arxiv.org/search/?query={self.query}&searchtype=all&size=200&start={self.page_var}"
+        
         dict_structure = {"Author(s)":[], "Title":[], "Abstract":[], "Field(s)":[], "Date":[]}
 
         try:
             if len(kwargs) == 1:
-                super().__init__(url, dict_structure, query_csv=kwargs['query_csv'])
+                super().__init__(dict_structure, author_csv=kwargs['author_csv'])
             elif len(kwargs) == 2:
-                super().__init__(url, dict_structure, query_csv=kwargs['query_csv'], author_csv=kwargs['author_csv'])
+                super().__init__(dict_structure, author_csv=kwargs['author_csv'], query_csv=kwargs['query_csv'])
             elif len(kwargs) == 3:
-                super().__init__(url, dict_structure, query_csv=kwargs['query_csv'], author_csv=kwargs['author_csv'], proxy_csv=kwargs['proxy_csv'])
+                super().__init__(dict_structure, author_csv=kwargs['author_csv'], query_csv=kwargs['query_csv'], proxy_csv=kwargs['proxy_csv'])
             else:
-                super().__init__(url, dict_structure)
+                super().__init__(dict_structure)
         except KeyError:
             print("one or more kwargs are not named correctly, should be 'query_csv', 'author_csv' and 'proxy_csv'")
+    
     
     def set_next_page_url(self):
         self.page_var += 200
         self.query_url = f"https://arxiv.org/search/?query={self.query}&searchtype=all&size=200&start={self.page_var}"
+    
+    
+    def set_next_query_url(self):
+        self.page_var = 0
+        self.query = super().get_next_query(self.query_index, self.author_index)
+        if self.query == None:
+            return False
+        self.query_url = f"https://arxiv.org/search/?query={self.query}&searchtype=all&size=200&start={self.page_var}"
+        return True
+
 
     def post_process_results(self, output_dict):
         output_dict = super().post_process_results(output_dict)
@@ -34,43 +44,47 @@ class ArXivCrawler(KeywordWebCrawler):
         output_dict.to_csv("ArXiv_" + "_".join(self.query.split()) + ".csv")
         return output_dict
 
+
     # solve issue of query_url being in attributes (should be as argument of this method istead)
     def loop_through_pages(self):
         output_dict = self.empty_dict
+        
+        # loop through slef.query_df and self.author_df
+        while self.set_next_query_url():
 
-    # loop through slef.query_df and self.author_df
-        while True:
-            # switch_proxy every now and then (at time 0 included)
+            while True:
+                # switch_proxy every now and then (at time 0 included)
+                # try to get_response and switch proxy if error or code 403 or every k steps?
 
-            self.get_response()
-            if self.request_response.status_code != 200:
-                print(self.request_response.status_code)
-                break
-            
-            results = self.get_search_results('li', "arxiv-result")
-            # solve no results case
-
-            for r in results:
-                output_dict["Author(s)"].append(r.find('p', class_="authors").get_text())
-                output_dict["Title"].append(r.find('p', class_="title is-5 mathjax").get_text())
-                output_dict["Abstract"].append(r.find('span', class_="abstract-full has-text-grey-dark mathjax").get_text())
-                output_dict["Date"].append(r.find('p', class_="is-size-7").get_text())
+                self.get_response()
+                if self.request_response.status_code != 200:
+                    print(self.request_response.status_code)
+                    break
                 
-                other_fields = r.find_all('span', class_="tag is-small is-grey tooltip is-tooltip-top")
-                main_fields = r.find_all('span', class_="tag is-small is-link tooltip is-tooltip-top")
-                fields = ""
-                if len(main_fields) > 0:
-                    for f in main_fields:
-                        fields +=  f['data-tooltip'] + ', '
-                if len(other_fields) > 0:
-                    for f in other_fields:
-                        fields +=  f['data-tooltip'] + ', '
-                else :
-                    fields = None
+                results = self.get_search_results('li', "arxiv-result")
+                # solve no results case (and other casses)
+
+                for r in results:
+                    output_dict["Author(s)"].append(r.find('p', class_="authors").get_text())
+                    output_dict["Title"].append(r.find('p', class_="title is-5 mathjax").get_text())
+                    output_dict["Abstract"].append(r.find('span', class_="abstract-full has-text-grey-dark mathjax").get_text())
+                    output_dict["Date"].append(r.find('p', class_="is-size-7").get_text())
                     
-                output_dict["Field(s)"].append(fields)
-            
-            self.set_next_page_url()
+                    other_fields = r.find_all('span', class_="tag is-small is-grey tooltip is-tooltip-top")
+                    main_fields = r.find_all('span', class_="tag is-small is-link tooltip is-tooltip-top")
+                    fields = ""
+                    if len(main_fields) > 0:
+                        for f in main_fields:
+                            fields +=  f['data-tooltip'] + ', '
+                    if len(other_fields) > 0:
+                        for f in other_fields:
+                            fields +=  f['data-tooltip'] + ', '
+                    else :
+                        fields = None
+                        
+                    output_dict["Field(s)"].append(fields)
+                
+                self.set_next_page_url()
 
         return output_dict
 
