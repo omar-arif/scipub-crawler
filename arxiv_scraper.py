@@ -13,7 +13,10 @@ class ArXivCrawler(KeywordWebCrawler):
             if len(kwargs) == 1:
                 super().__init__(dict_structure, author_csv=kwargs['author_csv'])
             elif len(kwargs) == 2:
-                super().__init__(dict_structure, author_csv=kwargs['author_csv'], query_csv=kwargs['query_csv'])
+                try:
+                    super().__init__(dict_structure, author_csv=kwargs['author_csv'], query_csv=kwargs['query_csv'])
+                except:
+                    super().__init__(dict_structure, author_csv=kwargs['author_csv'], proxy_csv=kwargs['proxy_csv'])
             elif len(kwargs) == 3:
                 super().__init__(dict_structure, author_csv=kwargs['author_csv'], query_csv=kwargs['query_csv'], proxy_csv=kwargs['proxy_csv'])
             else:

@@ -49,7 +49,8 @@ class KeywordWebCrawler(ABC):
 
     def switch_proxy(self):
         if self.proxy_df != None:
-            self.current_proxy = {'http' : self.proxy_df.iloc[randint(0,self.proxy_df.shape[0])]}
+            r = randint(0,self.proxy_df.shape[0])
+            self.current_proxy = {'http' : self.proxy_df['proxies'].iloc[r]}
 
     
     def get_response(self):
@@ -150,6 +151,7 @@ class KeywordWebCrawler(ABC):
 
                 self.get_response()
                 if self.request_response.status_code == 403:
+                    # maybe remove proxy if error or code 403
                     self.switch_proxy()
                     self.get_response()
                 elif self.loop_breaking_cond():

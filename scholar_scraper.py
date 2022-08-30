@@ -3,26 +3,35 @@ from abstract_scraper import KeywordWebCrawler
 class ScholarCrawler(KeywordWebCrawler):
 
     def __init__(self, query, **kwargs):
-        self.query = query
         self.page_var = 0
-        url = f"https://scholar.google.com/scholar?start={self.page_var}&q={self.query}&num=20"   
         dict_structure = {"author(s)":[], "title":[], "abstract_sample":[], "publication_link":[]}
         
         try:
             if len(kwargs) == 1:
-                super().__init__(url, dict_structure, query_csv=kwargs['query_csv'])
+                super().__init__(dict_structure, author_csv=kwargs['author_csv'])
             elif len(kwargs) == 2:
-                super().__init__(url, dict_structure, query_csv=kwargs['query_csv'], author_csv=kwargs['author_csv'])
+                try:
+                    super().__init__(dict_structure, author_csv=kwargs['author_csv'], query_csv=kwargs['query_csv'])
+                except:
+                    super().__init__(dict_structure, author_csv=kwargs['author_csv'], proxy_csv=kwargs['proxy_csv'])
             elif len(kwargs) == 3:
-                super().__init__(url, dict_structure, query_csv=kwargs['query_csv'], author_csv=kwargs['author_csv'], proxy_csv=kwargs['proxy_csv'])
+                super().__init__(dict_structure, author_csv=kwargs['author_csv'], query_csv=kwargs['query_csv'], proxy_csv=kwargs['proxy_csv'])
             else:
-                super().__init__(url, dict_structure)
+                super().__init__(dict_structure)
         except KeyError:
             print("one or more kwargs are not named correctly, should be 'query_csv', 'author_csv' and 'proxy_csv'")
     
     def set_next_page_url(self):
         self.page_var += 20
         self.query_url = f"https://scholar.google.com/scholar?start={self.page_var}&q={self.query}&num=20"
+
+    def set_next_query_url(self):
+        self.page_var = 0
+        self.query = super().get_next_query(self.query_index, self.author_index)
+        if self.query == None:
+            return False
+        self.query_url = f"https://arxiv.org/search/?query={self.query}&searchtype=all&size=200&start={self.page_var}"
+        return True
 
     def post_process_results(self, output_dict):
         output_dict = super().post_process_results(output_dict)
