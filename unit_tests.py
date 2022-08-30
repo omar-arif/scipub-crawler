@@ -1,3 +1,4 @@
+from re import S
 import pytest
 from arxiv_scraper import ArXivCrawler
 from scholar_scraper import ScholarCrawler
@@ -10,6 +11,13 @@ class TestClassInstanciation:
         assert ac.author_df == None
         assert ac.query_df == None
         assert ac.proxy_df == None
+        assert ac.empty_dict == {"Author(s)":[], "Title":[], "Abstract":[], "Field(s)":[], "Date":[]}
+        sc = ScholarCrawler()
+        assert sc.author_df == None
+        assert sc.query_df == None
+        assert sc.author_df == None
+        assert sc.empty_dict == {"author(s)":[], "title":[], "abstract_sample":[], "publication_link":[]}
+
     def test_instanciate_no_proxy(self):
         pass
     def test_instanciate_no_query(self):

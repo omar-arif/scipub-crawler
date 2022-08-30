@@ -2,7 +2,7 @@ from abstract_scraper import KeywordWebCrawler
 
 class ScholarCrawler(KeywordWebCrawler):
 
-    def __init__(self, query, **kwargs):
+    def __init__(self,**kwargs):
         self.page_var = 0
         dict_structure = {"author(s)":[], "title":[], "abstract_sample":[], "publication_link":[]}
         
