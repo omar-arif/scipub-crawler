@@ -81,6 +81,7 @@ class KeywordWebCrawler(ABC):
                 # handle key error
                 q = self.query_df['author'].iloc[self.query_index]
                 self.query_index += 1
+                self.switch_proxy()
                 return q
 
             # if done looping through queries
@@ -93,6 +94,7 @@ class KeywordWebCrawler(ABC):
             if self.query_index != self.query_df.shape[0]:
                 q = self.author_df['author'].iloc[self.author_index] + self.query_df['query'].iloc[self.query_index]
                 self.query_index += 1
+                self.switch_proxy()
                 return q
 
             # if done looping through queries
@@ -102,6 +104,8 @@ class KeywordWebCrawler(ABC):
                 if self.author_index != self.author_df.shape[0]:
                     q = self.author_df['author'].iloc[self.author_index] + self.query_df['query'].iloc[self.query_index]
                     self.author_index += 1
+                    self.switch_proxy()
+
                     return q
                 # if done looping through authors
                 return None
@@ -123,10 +127,41 @@ class KeywordWebCrawler(ABC):
         output_dict.fillna(value=nan, inplace=True)
         return output_dict
 
-    
     @abstractmethod
-    def loop_through_pages(self):
+    def fill_up_dict(self, output_dict):
         pass
+
+    @abstractmethod
+    def loop_breaking_cond(self):
+        pass
+    
+    # solve issue of query_url being in attributes (should be as argument of this method istead)
+    def loop_through_pages(self):
+
+        output_dict = self.empty_dict
+        self.switch_proxy()
+
+        # loop through slef.query_df and self.author_df
+        while self.set_next_query_url():
+
+            while True:
+                # switch_proxy every now and then (at time 0 included)
+                # try to get_response and switch proxy if error or code 403 or every k steps or after every author search?
+
+                self.get_response()
+                if self.request_response.status_code == 403:
+                    self.switch_proxy()
+                    self.get_response()
+                elif self.loop_breaking_cond():
+                    print(self.request_response.status_code)
+                    break
+            
+                output_dict = self.fill_up_dict(output_dict)
+
+                self.set_next_page_url()
+
+        return output_dict
+        
 
     
     def scrape_website(self):
