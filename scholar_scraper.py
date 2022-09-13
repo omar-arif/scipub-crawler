@@ -27,10 +27,10 @@ class ScholarCrawler(KeywordWebCrawler):
 
     def set_next_query_url(self):
         self.page_var = 0
-        self.query = super().get_next_query(self.query_index, self.author_index)
+        self.query = super().get_next_query()
         if self.query == None:
             return False
-        self.query_url = f"https://arxiv.org/search/?query={self.query}&searchtype=all&size=200&start={self.page_var}"
+        self.query_url = f"https://scholar.google.com/scholar?start={self.page_var}&q={self.query}&num=20"
         return True
 
     def post_process_results(self, output_dict):
@@ -41,12 +41,18 @@ class ScholarCrawler(KeywordWebCrawler):
         return output_dict
 
     def loop_breaking_cond(self):
-        bool_ = self.request_response.status_code != 200 or self.page_var > 1000
+        bool_ = self.request_response.status_code != 200 or self.page_var >= 1000
         return bool_
 
     def fill_up_dict(self, output_dict):
-        results = self.get_search_results('div', 'gs_r gs_or gs_scl')
+        try:
+            results = self.get_search_results('div', 'gs_r gs_or gs_scl')
+        except:
+            return None
         # solve no results case
+
+        if len(results) == 0:
+            return None
 
         for r in results:
             output_dict["author(s)"].append(r.find('div', class_="gs_a").get_text())

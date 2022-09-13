@@ -32,7 +32,7 @@ class ArXivCrawler(KeywordWebCrawler):
     
     def set_next_query_url(self):
         self.page_var = 0
-        self.query = super().get_next_query(self.query_index, self.author_index)
+        self.query = super().get_next_query()
         if self.query == None:
             return False
         self.query_url = f"https://arxiv.org/search/?query={self.query}&searchtype=all&size=200&start={self.page_var}"
@@ -44,7 +44,7 @@ class ArXivCrawler(KeywordWebCrawler):
         output_dict["Author(s)"] = output_dict["Author(s)"].apply(lambda x: x[8:])
         output_dict["Date"] = output_dict["Date"].apply(lambda x: x.split(';')[0][10:])
         output_dict["Date"] = to_datetime(output_dict["Date"], format='%d %B, %Y')
-        output_dict.to_csv("ArXiv_" + "_".join(self.query.split()) + ".csv")
+        output_dict.to_csv("ArXiv_data.csv")#"_".join(self.query.split()) + ".csv")
         return output_dict
 
     def loop_breaking_cond(self):
@@ -52,9 +52,15 @@ class ArXivCrawler(KeywordWebCrawler):
 
     def fill_up_dict(self, output_dict):
         
-        results = self.get_search_results('li', "arxiv-result")
-        
+        try:
+            results = self.get_search_results('li', "arxiv-result")
+        except:
+            return None
         # solve no results case (and other casses)
+
+        if len(results) == 0:
+            return None
+
         for r in results:
             output_dict["Author(s)"].append(r.find('p', class_="authors").get_text())
             output_dict["Title"].append(r.find('p', class_="title is-5 mathjax").get_text())

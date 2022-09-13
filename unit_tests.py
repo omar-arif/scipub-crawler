@@ -1,5 +1,5 @@
-from re import S
 import pytest
+from abstract_scraper import KeywordWebCrawler
 from arxiv_scraper import ArXivCrawler
 from scholar_scraper import ScholarCrawler
 # file to run unit tests
@@ -8,11 +8,13 @@ class TestClassInstanciation:
 
     def test_instanciate_full(self):
         ac = ArXivCrawler()
+        assert isinstance(ac, KeywordWebCrawler)
         assert ac.author_df == None
         assert ac.query_df == None
         assert ac.proxy_df == None
         assert ac.empty_dict == {"Author(s)":[], "Title":[], "Abstract":[], "Field(s)":[], "Date":[]}
         sc = ScholarCrawler()
+        assert isinstance(sc, KeywordWebCrawler)
         assert sc.author_df == None
         assert sc.query_df == None
         assert sc.author_df == None

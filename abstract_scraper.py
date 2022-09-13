@@ -11,30 +11,26 @@ class KeywordWebCrawler(ABC):
     '''
 
     def __init__(self, dict_structure, **kwargs):
-        # initialize query url (url of the first page of the search query)
         self.empty_dict = dict_structure
         self.query_index = 0
         self.author_index = 0
         self.query_url = None
         self.request_response = None
         self.current_proxy = None
-        # add proxy attribute (of type "{'http':'ip:port}")
         try:
-            self.query_df = pd.open_csv(kwargs['query_csv'])
+            self.query_df = pd.read_csv(kwargs['query_csv'])
         except:
-            self.query_df = None
+            self.query_df = pd.DataFrame()
         
         try:
-            self.author_df = pd.open_csv(kwargs['author_csv'])
+            self.author_df = pd.read_csv(kwargs['author_csv'])
         except:
-            self.author_df = None
+            self.author_df = pd.DataFrame()
 
         try:
-            self.proxy_df = pd.open_csv(kwargs['proxy_csv'])
+            self.proxy_df = pd.read_csv(kwargs['proxy_csv'])
         except:
-            self.proxy_df = None
-        # do a multi args constructor see : https://www.geeksforgeeks.org/what-is-a-clean-pythonic-way-to-have-multiple-constructors-in-python/
-        # add exception handling (cases of empty result list for example)
+            self.proxy_df = pd.DataFrame()
     
 
     @abstractmethod
@@ -48,8 +44,8 @@ class KeywordWebCrawler(ABC):
 
 
     def switch_proxy(self):
-        if self.proxy_df != None:
-            r = randint(0,self.proxy_df.shape[0])
+        if self.proxy_df.empty == False:
+            r = randint(0,self.proxy_df.shape[0]-1)
             self.current_proxy = {'http' : self.proxy_df['proxies'].iloc[r]}
 
     
@@ -67,21 +63,18 @@ class KeywordWebCrawler(ABC):
     
     def get_next_query(self):
         # return True if success or not done else False
-        # make the indexes attributes
-        
         # if no authors 
-        if self.author_df == None:
+        if self.author_df.empty:
             # maybe handle this case by error : should have author df
             return None
         
         # if authors but no fields (query)
-        elif self.query_df == None:
-
-            # if not done looping through queries
-            if self.query_index != self.query_df.shape[0]:
+        elif self.query_df.empty:
+            # if not done looping through authors
+            if self.author_index != self.author_df.shape[0]:
                 # handle key error
-                q = self.query_df['author'].iloc[self.query_index]
-                self.query_index += 1
+                q = self.author_df['author'].iloc[self.author_index]
+                self.author_index += 1
                 self.switch_proxy()
                 return q
 
@@ -90,10 +83,9 @@ class KeywordWebCrawler(ABC):
 
         # if authors and queries availabale
         else:
-
             # if not done looping through queries
-            if self.query_index != self.query_df.shape[0]:
-                q = self.author_df['author'].iloc[self.author_index] + self.query_df['query'].iloc[self.query_index]
+            if self.query_index != self.query_df.shape[0] and self.author_index != self.author_df.shape[0]:
+                q = self.author_df['author'].iloc[self.author_index] + " " + self.query_df['query'].iloc[self.query_index]
                 self.query_index += 1
                 self.switch_proxy()
                 return q
@@ -103,7 +95,7 @@ class KeywordWebCrawler(ABC):
                 self.query_index = 0
                 # if not done looping through authors
                 if self.author_index != self.author_df.shape[0]:
-                    q = self.author_df['author'].iloc[self.author_index] + self.query_df['query'].iloc[self.query_index]
+                    q = self.author_df['author'].iloc[self.author_index] + " " + self.query_df['query'].iloc[self.query_index]
                     self.author_index += 1
                     self.switch_proxy()
 
@@ -144,22 +136,27 @@ class KeywordWebCrawler(ABC):
 
         # loop through slef.query_df and self.author_df
         while self.set_next_query_url():
-
+            print("hey")
             while True:
                 # switch_proxy every now and then (at time 0 included)
                 # try to get_response and switch proxy if error or code 403 or every k steps or after every author search?
 
                 self.get_response()
-                if self.request_response.status_code == 403:
+                if self.request_response.status_code == 403 or self.request_response.status_code == 429:
                     # maybe remove proxy if error or code 403
                     self.switch_proxy()
                     self.get_response()
+                    if self.request_response.status_code == 403 or self.request_response.status_code == 429:
+                        raise Exception('Proxy list is not good enough / Too many requests / Banned by the website')
                 elif self.loop_breaking_cond():
                     print(self.request_response.status_code)
                     break
-            
-                output_dict = self.fill_up_dict(output_dict)
-
+                
+                out = self.fill_up_dict(output_dict)
+                if out == None:
+                    break
+                else:
+                    output_dict = out
                 self.set_next_page_url()
 
         return output_dict
