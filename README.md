@@ -8,7 +8,7 @@ run: pip install requirements.txt
 ## format of input data
 In order to use this app, you need to have:
 - a csv file containing the authors which publications you want to search in the column named "author" (necessary)
-- a csv file containing the fields or key word you want ot add to the search in the column named "query" (not necessary)
+- a csv file containing the field, university name or any key word you want to add to the search in the column named "query" (not necessary)
 - a csv file containing a list of proxys (not necessary) with proxies adress' written in format: 'ip:port' in the column named "proxies"
 - if the proxies need authentification, another column is required named "userpass" containg the username and password of the proxy in format 'user:password'
 
