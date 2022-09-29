@@ -1,6 +1,9 @@
 from abstract_scraper import KeywordWebCrawler
 
 class ScholarCrawler(KeywordWebCrawler):
+    '''
+        Class representing a crawler/scraper of the Google Scholar website
+    '''
 
     def __init__(self,**kwargs):
         self.page_var = 0
@@ -49,7 +52,6 @@ class ScholarCrawler(KeywordWebCrawler):
             results = self.get_search_results('div', 'gs_r gs_or gs_scl')
         except:
             return None
-        # solve no results case
 
         if len(results) == 0:
             return None

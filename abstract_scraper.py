@@ -11,6 +11,9 @@ class KeywordWebCrawler(ABC):
     '''
 
     def __init__(self, dict_structure, **kwargs):
+        '''
+            Constructor class
+        '''
         self.empty_dict = dict_structure
         self.query_index = 0
         self.author_index = 0
@@ -35,18 +38,32 @@ class KeywordWebCrawler(ABC):
 
     @abstractmethod
     def set_next_page_url(self):
+        '''
+            Method to set next page url by updating the page number
+        '''
         pass
 
 
     @abstractmethod
     def set_next_query_url(self):
+        '''
+            Method to update the query url in order to start the next search
+        '''
         pass
 
 
     def switch_proxy(self):
+        '''
+            Method to switch proxy server in order to bypass too many request errors
+        '''
         if self.proxy_df.empty == False:
             r = randint(0,self.proxy_df.shape[0]-1)
-            self.current_proxy = {'http' : self.proxy_df['proxies'].iloc[r]}
+            try:
+                # if private proxy
+                self.current_proxy = {'https' : 'https://{}@{}'.format(self.proxy_df['userpass'].iloc[r], self.proxy_df['proxies'].iloc[r])}
+            except:
+                # if not available then public proxy is used
+                self.current_proxy = {'http' : self.proxy_df['proxies'].iloc[r]}
 
     
     def get_response(self):
@@ -62,6 +79,10 @@ class KeywordWebCrawler(ABC):
 
     
     def get_next_query(self):
+        '''
+            Update query of search by looping through input data
+            Returns the query if not done looping or else returns None 
+        '''
         # return True if success or not done else False
         # if no authors 
         if self.author_df.empty:
@@ -115,6 +136,9 @@ class KeywordWebCrawler(ABC):
 
     @abstractmethod
     def post_process_results(self, output_dict):
+        '''
+            Process results into a structured pandas Dataframe
+        '''
         output_dict = pd.DataFrame(output_dict)
         output_dict = output_dict.replace('\n','', regex=True).replace('  ','', regex=True)
         output_dict.fillna(value=nan, inplace=True)
@@ -122,14 +146,23 @@ class KeywordWebCrawler(ABC):
 
     @abstractmethod
     def fill_up_dict(self, output_dict):
+        '''
+            Method to fill up a dictionnary with necessary data from the parsed html code
+        '''
         pass
 
     @abstractmethod
     def loop_breaking_cond(self):
+        '''
+            Method defining the condition to break the scraping loop
+        '''
         pass
     
-    # solve issue of query_url being in attributes (should be as argument of this method istead)
+    
     def loop_through_pages(self):
+        '''
+            Scrape website by sending requests of different querys and for all possible pages and returning the data in a dictionnary
+        '''
 
         output_dict = self.empty_dict
         self.switch_proxy()
@@ -164,4 +197,8 @@ class KeywordWebCrawler(ABC):
 
     
     def scrape_website(self):
+        '''
+            Ultimate method to scrape and process data using input author and/or query data
+            Returns a pandas Dataframe and produces a csv file
+        '''
         return self.post_process_results(self.loop_through_pages())

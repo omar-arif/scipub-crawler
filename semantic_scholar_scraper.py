@@ -1,6 +1,9 @@
 from abstract_scraper import KeywordWebCrawler
 
 class SemanticCrawler(KeywordWebCrawler):
+    '''
+        Class representing a crawler/scraper of the Semantic Scholar website
+    '''
 
     def __init__(self, **kwargs):
         self.page_var = 1

@@ -2,6 +2,9 @@ from abstract_scraper import KeywordWebCrawler
 from pandas import to_datetime
 
 class ArXivCrawler(KeywordWebCrawler):
+    '''
+        Class representing a crawler/scraper of the ArXiv website
+    '''
 
     def __init__(self, **kwargs):
         
@@ -44,7 +47,7 @@ class ArXivCrawler(KeywordWebCrawler):
         output_dict["Author(s)"] = output_dict["Author(s)"].apply(lambda x: x[8:])
         output_dict["Date"] = output_dict["Date"].apply(lambda x: x.split(';')[0][10:])
         output_dict["Date"] = to_datetime(output_dict["Date"], format='%d %B, %Y')
-        output_dict.to_csv("ArXiv_data.csv")#"_".join(self.query.split()) + ".csv")
+        output_dict.to_csv("ArXiv_data.csv")
         return output_dict
 
     def loop_breaking_cond(self):
@@ -56,7 +59,6 @@ class ArXivCrawler(KeywordWebCrawler):
             results = self.get_search_results('li', "arxiv-result")
         except:
             return None
-        # solve no results case (and other casses)
 
         if len(results) == 0:
             return None
