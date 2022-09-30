@@ -47,7 +47,7 @@ class ArXivCrawler(KeywordWebCrawler):
         output_dict["Author(s)"] = output_dict["Author(s)"].apply(lambda x: x[8:])
         output_dict["Date"] = output_dict["Date"].apply(lambda x: x.split(';')[0][10:])
         output_dict["Date"] = to_datetime(output_dict["Date"], format='%d %B, %Y')
-        output_dict.to_csv("ArXiv_data.csv")
+        output_dict.to_csv("ArXiv_data.csv", index=False)
         return output_dict
 
     def loop_breaking_cond(self):

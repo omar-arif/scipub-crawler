@@ -40,7 +40,7 @@ class ScholarCrawler(KeywordWebCrawler):
         output_dict = super().post_process_results(output_dict)
         output_dict["journal/year"] = output_dict["author(s)"].apply(lambda x: x.split("-")[1])
         output_dict["author(s)"] = output_dict["author(s)"].apply(lambda x: x.split("-")[0])
-        output_dict.to_csv("GoogleScholar_" + "_".join(self.query.split()) + ".csv")
+        output_dict.to_csv("GoogleScholar_data.csv", index=False)
         return output_dict
 
     def loop_breaking_cond(self):
