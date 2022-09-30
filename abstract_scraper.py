@@ -169,7 +169,6 @@ class KeywordWebCrawler(ABC):
 
         # loop through slef.query_df and self.author_df
         while self.set_next_query_url():
-            print("hey")
             while True:
                 # switch_proxy every now and then (at time 0 included)
                 # try to get_response and switch proxy if error or code 403 or every k steps or after every author search?
